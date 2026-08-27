@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ブロスタ女子何人言えるかな</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('images/background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #1b2838;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            background-color: rgba(0, 123, 255, 0.8);
+            display: inline-block;
+            padding: 10px 30px;
+            border-radius: 8px;
+            font-size: 28px;
+            letter-spacing: 2px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        #top-bar {
+            margin: 20px auto;
+            max-width: 950px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"] {
+            font-size: 18px;
+            padding: 8px 12px;
+            width: 220px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            font-size: 16px;
+            padding: 9px 18px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #answer-btn {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+        #answer-btn:hover { background-color: #d0d0d0; }
+
+        #giveup-btn {
+            background-color: #8b0000;
+            color: white;
+        }
+        #giveup-btn:hover { background-color: #a00000; }
+
+        #sound-btn {
+            background-color: #27ae60;
+            color: white;
+        }
+        #sound-btn.off {
+            background-color: #7f8c8d;
+        }
+
+        .info-box {
+            font-size: 16px;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px 12px;
+            border-radius: 4px;
+        }
+
+        .grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            max-width: 1050px;
+            margin: 20px auto;
+        }
+
+        .card {
+            width: 85px;
+            height: 105px;
+            background-color: rgba(40, 40, 60, 0.85);
+            border: 2px solid #555;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px;
+            box-sizing: border-box;
+        }
+
+        .card .number {
+            font-size: 10px;
+            color: #ccc;
+            align-self: flex-start;
+        }
+
+        .card img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .card .name {
+            font-size: 10px;
+            color: #aaa;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        .card.correct {
+            border-color: #2ecc71;
+            background-color: rgba(30, 80, 50, 0.9);
+        }
+        .card.correct .name {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>&lt; ブロスタ女子何人言えるかな &gt;</h1>
+
+    <div id="top-bar">
+        <input type="text" id="user-input" placeholder="名前を入力 (ひらがな・カタカナOK)" autofocus>
+        <button id="answer-btn" type="button">回答</button>
+        <button id="giveup-btn" type="button">ギブアップ</button>
+        <button id="sound-btn" type="button">音声: ON</button>
+        <div class="info-box">⏱ <span id="timer">00:00</span></div>
+        <div class="info-box">正解数: <span id="count">0</span> / <span id="total-count">0</span></div>
+        <div class="info-box">残り: <span id="remaining">0</span>人</div>
+    </div>
+
+    <div class="grid" id="grid-container"></div>
+
+    <script>
+        // メンバーデータリスト
+        const characters = [
+            { id: 1, names: ["ほたる", "ホタル"], label: "ほたる" },
+            { id: 2, names: ["えくれあ", "エクレア"], label: "えくれあ" },
+            { id: 3, names: ["ほのち", "ホノチ"], label: "ほのち" },
+            { id: 4, names: ["ももすん", "モモスン"], label: "ももすん" },
+            { id: 5, names: ["いし", "イシ"], label: "いし" },
+            { id: 6, names: ["はつちゃん", "ハツちゃん", "はつ", "ハツ"], label: "はつちゃん" },
+            { id: 7, names: ["りかたんぽ", "リカタンポ"], label: "りかたんぽ" },
+            { id: 8, names: ["りあ", "リア"], label: "りあ" },
+            { id: 9, names: ["ぷぷてゃ", "ププテャ"], label: "ぷぷてゃ" },
+            { id: 10, names: ["こおり", "コオリ"], label: "こおり" },
+            { id: 11, names: ["あいす", "アイス"], label: "あいす" },
+            { id: 12, names: ["にこたん", "ニコタン"], label: "にこたん" },
+            { id: 13, names: ["らむね", "ラムネ"], label: "らむね" },
+            { id: 14, names: ["ゆら", "ユラ"], label: "ゆら" },
+            { id: 15, names: ["みさりん", "ミサリン"], label: "みさりん" },
+            { id: 16, names: ["もちまろ", "モチマロ", "もちぱん", "モチパン"], label: "もちまろ" },
+            { id: 17, names: ["もえ", "モエ", "もえもも", "モエモモ"], label: "もえ" },
+            { id: 18, names: ["みらーと", "ミラート"], label: "みらーと" },
+            { id: 19, names: ["ふらい", "フライ"], label: "ふらい" },
+            { id: 20, names: ["こっこ", "コッコ"], label: "こっこ" },
+            { id: 21, names: ["あやた", "アヤタ"], label: "あやた" },
+            { id: 22, names: ["ここちゃ", "ココチャ"], label: "ここちゃ" },
+            { id: 23, names: ["れあちくりん", "レアチクリン"], label: "れあちくりん" },
+            { id: 24, names: ["らいりー", "ライリー"], label: "らいりー" },
+            { id: 25, names: ["ひな", "ヒナ"], label: "ひな" },
+            { id: 26, names: ["あるどら", "アルドラ"], label: "あるどら" },
+            { id: 27, names: ["りりっぷ", "リリップ"], label: "りりっぷ" },
+            { id: 28, names: ["わいみー", "ワイミー"], label: "わいみー" },
+            { id: 29, names: ["ぽめ", "ポメ"], label: "ぽめ" },
+            { id: 30, names: ["えりざべす", "エリザベス"], label: "えりざべす" },
+            { id: 31, names: ["ちょぱ", "チョパ"], label: "ちょぱ" },
+            { id: 32, names: ["ぽんちゃん", "ポンちゃん"], label: "ぽんちゃん" },
+            { id: 33, names: ["すずにうむ", "スズニウム"], label: "すずにうむ" },
+            { id: 34, names: ["ぴよ", "ピヨ"], label: "ぴよ" },
+            { id: 35, names: ["ろかすい", "ロカスイ"], label: "ろかすい" },
+            { id: 36, names: ["はの", "ハノ"], label: "はの" },
+            { id: 37, names: ["ももきゃ", "モモキャ"], label: "ももきゃ" },
+            { id: 38, names: ["らりるれろり", "ラリルレロリ"], label: "らりるれろり" },
+            { id: 39, names: ["さほめろ", "サホメロ"], label: "さほめろ" },
+            { id: 40, names: ["ぽぽにゃて", "ポポニャテ"], label: "ぽぽにゃて" },
+            { id: 41, names: ["ひめぴの", "ヒメピノ"], label: "ひめぴの" },
+            { id: 42, names: ["うさたん", "ウサタン"], label: "うさたん" },
+            { id: 43, names: ["かふぇ", "カフェ"], label: "かふぇ" },
+            { id: 44, names: ["こぐられぎ", "コグラレギ", "おぐられぎ", "オグラレギ"], label: "こぐられぎ" },
+            { id: 45, names: ["さかな", "サカナ"], label: "さかな" },
+            { id: 46, names: ["ぱせりん", "パセリン"], label: "ぱせりん" },
+            { id: 47, names: ["たにゃ", "タニャ", "たにゃです", "タニャデス"], label: "たにゃです" },
+            { id: 48, names: ["りすねき", "リスネキ"], label: "りすねき" },
+            { id: 49, names: ["さんそ", "サンソ"], label: "さんそ" },
+            { id: 50, names: ["まゆ", "マユ"], label: "まゆ" },
+            { id: 51, names: ["あいしゃるてぃー", "アイシャルティー"], label: "あいしゃるてぃー" },
+            { id: 52, names: ["もちれび", "モチレビ"], label: "もちれび" },
+            { id: 53, names: ["ぎょん", "ギョン", "ぎょどん", "ギョドン"], label: "ぎょん" },
+            { id: 54, names: ["まなみ", "マナミ"], label: "まなみ" },
+            { id: 55, names: ["るちゃん", "ルチャン"], label: "るちゃん" },
+            { id: 56, names: ["まなっぺ", "マナッペ"], label: "まなっぺ" },
+            { id: 57, names: ["くれは", "クレハ"], label: "くれは" },
+            { id: 58, names: ["ふじこ", "フジコ"], label: "ふじこ" },
+            { id: 59, names: ["はるまき", "ハルマキ"], label: "はるまき" },
+            { id: 60, names: ["ちゅんまぐ", "チュンマグ"], label: "ちゅんまぐ" }
+        ];
+
+        let foundCount = 0;
+        let isFinished = false;
+        let seconds = 0;
+        let timerInterval;
+        let soundEnabled = true;
+
+        // ==========================================
+        // ★ ここで持ってきた音声ファイルを指定します
+        // ==========================================
+        const correctSound = new Audio('correct.mp3'); // 正解音のファイル名
+        const wrongSound = new Audio('wrong.mp3');     // 不正解音のファイル名
+
+        function playCorrectSound() {
+            if (!soundEnabled) return;
+            correctSound.currentTime = 0; // 音を最初から再生
+            correctSound.play().catch(e => {});
+        }
+
+        function playWrongSound() {
+            if (!soundEnabled) return;
+            wrongSound.currentTime = 0; // 音を最初から再生
+            wrongSound.play().catch(e => {});
+        }
+
+        const inputField = document.getElementById("user-input");
+        const countDisplay = document.getElementById("count");
+        const totalDisplay = document.getElementById("total-count");
+        const remainingDisplay = document.getElementById("remaining");
+        const timerDisplay = document.getElementById("timer");
+        const gridContainer = document.getElementById("grid-container");
+        const answerBtn = document.getElementById("answer-btn");
+        const giveupBtn = document.getElementById("giveup-btn");
+        const soundBtn = document.getElementById("sound-btn");
+
+        totalDisplay.textContent = characters.length;
+        remainingDisplay.textContent = characters.length;
+
+        // 音声ON/OFFボタンの切り替え
+        soundBtn.addEventListener("click", () => {
+            soundEnabled = !soundEnabled;
+            if (soundEnabled) {
+                soundBtn.textContent = "音声: ON";
+                soundBtn.classList.remove("off");
+                playCorrectSound();
+            } else {
+                soundBtn.textContent = "音声: OFF";
+                soundBtn.classList.add("off");
+            }
+        });
+
+        // マスの生成
+        characters.forEach((char, index) => {
+            const numStr = String(index + 1).padStart(3, '0');
+            const card = document.createElement("div");
+            card.className = "card";
+            card.id = `card-${index}`;
+            card.innerHTML = `
+                <div class="number">${numStr}</div>
+                <img id="img-${index}" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><rect width='100%' height='100%' fill='%23333'/><text x='50%' y='55%' font-size='24' fill='%23aaa' text-anchor='middle' dominant-baseline='middle'>?</text></svg>" alt="???">
+                <div class="name" id="name-${index}">???</div>
+            `;
+            gridContainer.appendChild(card);
+        });
+
+        // タイマー開始
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (isFinished) return;
+                seconds++;
+                let m = Math.floor(seconds / 60).toString().padStart(2, '0');
+                let s = (seconds % 60).toString().padStart(2, '0');
+                timerDisplay.textContent = `${m}:${s}`;
+            }, 1000);
+        }
+        startTimer();
+
+        // 正解判定ロジック
+        function processAnswer() {
+            if (isFinished) return;
+            const val = inputField.value.trim().toLowerCase();
+            if (val === "") return;
+
+            let hit = false;
+            characters.forEach((char, index) => {
+                if (!char.isFound) {
+                    const isMatch = char.names.some(name => name.toLowerCase() === val);
+                    if (isMatch) {
+                        hit = true;
+                        char.isFound = true;
+                        foundCount++;
+
+                        const card = document.getElementById(`card-${index}`);
+                        const img = document.getElementById(`img-${index}`);
+                        const nameDiv = document.getElementById(`name-${index}`);
+
+                        img.src = `images/char_${index + 1}.jpg`;
+                        img.onerror = function() {
+                            this.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><rect width='100%' height='100%' fill='%231e3d2f'/><text x='50%' y='55%' font-size='12' fill='%232ecc71' text-anchor='middle' dominant-baseline='middle'>OK</text></svg>";
+                        };
+
+                        nameDiv.textContent = char.label;
+                        card.classList.add("correct");
+                    }
+                }
+            });
+
+            if (hit) {
+                playCorrectSound();
+            } else {
+                playWrongSound();
+            }
+
+            countDisplay.textContent = foundCount;
+            remainingDisplay.textContent = characters.length - foundCount;
+
+            inputField.value = "";
+            inputField.focus();
+
+            if (foundCount === characters.length) {
+                isFinished = true;
+                clearInterval(timerInterval);
+                setTimeout(() => {
+                    alert(`おめでとうございます！コンプリート！ タイム: ${timerDisplay.textContent}`);
+                }, 100);
+            }
+        }
+
+        // ギブアップ処理
+        giveupBtn.addEventListener("click", () => {
+            if (isFinished) return;
+            if (confirm("ギブアップしますか？")) {
+                isFinished = true;
+                clearInterval(timerInterval);
+
+                characters.init = true;
+                characters.forEach((char, index) => {
+                    if (!char.isFound) {
+                        const card = document.getElementById(`card-${index}`);
+                        const img = document.getElementById(`img-${index}`);
+                        const nameDiv = document.getElementById(`name-${index}`);
+
+                        img.src = `images/char_${index + 1}.jpg`;
+                        img.onerror = function() {
+                            this.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><rect width='100%' height='100%' fill='%23441a1a'/><text x='50%' y='55%' font-size='12' fill='%23e74c3c' text-anchor='middle' dominant-baseline='middle'>END</text></svg>";
+                        };
+                        nameDiv.textContent = char.label;
+                        card.style.borderColor = "#e74c3c";
+                    }
+                });
+            }
+        });
+
+        // イベント設定
+        inputField.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                processAnswer();
+            }
+        });
+
+        answerBtn.getElementById = document.getElementById("answer-btn");
+        answerBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            processAnswer();
+        });
+    </script>
+
+</body>
+</html>
