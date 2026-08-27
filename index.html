@@ -352,8 +352,6 @@
             if (confirm("ギブアップしますか？")) {
                 isFinished = true;
                 clearInterval(timerInterval);
-
-                characters.init = true;
                 characters.forEach((char, index) => {
                     if (!char.isFound) {
                         const card = document.getElementById(`card-${index}`);
